@@ -68,31 +68,7 @@ UA_StatusCode OPCUAserver::startSimMethod_callback(
 }
 
 
-/*
- * callback:
- * the callback is registered to a method in address space. the method is used by client to specify server the number of FMUs to load
- * 
- * function:
- * the method takes 1 input argument as scalar of type Uint8 - the count of FMUs to load
- * 
- * Condition:
- * condition to execute is OPCUAserver::sim_controls.status_simulation == false
- * 
- * Node Details:
- * UA_NODEID_NUMERIC(1,62542)
- * located in objects folder
- * NodeClass = Method
- * Executable & UserExecutable
- */
 
-UA_StatusCode OPCUAserver::modelCount_callback(
-            void *methodHandle,
-            const UA_NodeId objectId,
-            size_t inputSize, const UA_Variant *input,
-            size_t outputSize, UA_Variant *output)
-{
-    
-}
 
 
 /*

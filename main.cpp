@@ -43,36 +43,35 @@ int main(int argc, char** argv)
     cin>>s;
 
 
-    
+
     testFunction_makeFMUlist(atoi(s.c_str())); //load FMU(s) into vector for simulation 
     cout << "loaded " << myFMUs.size() << " FMU(s)" << endl;
     thisServer->startServer(); //start OPCUA server process
-    
-    
+
+
 
     while (running)
     {
-        if (thisServer->sim_controls.start_simulation == true)
-        {
-            if (thisServer->sim_controls.status_simulation == false)
-            {
-                thisServer->sim_controls.start_simulation = false;
-                simulation_step = thisServer->sim_controls.simulation_step;
-                simulation_end = thisServer->sim_controls.simulation_time;
-                simulation_i = 0;
-                InitializeFMUs();
-                t_runstart = high_resolution_clock::now();
-                thisServer->sim_controls.status_simulation = true;
-
-            }
-
-        }
-
         if (thisServer->sim_controls.status_simulation == true)
         {
             SimulationEngine();
+        } else if (thisServer->sim_controls.start_simulation == true)
+        {
+
+
+            thisServer->sim_controls.start_simulation = false;
+            simulation_step = thisServer->sim_controls.simulation_step;
+            simulation_end = thisServer->sim_controls.simulation_time;
+            simulation_i = 0;
+            InitializeFMUs();
+            thisServer->sim_controls.status_simulation = true;
+            t_runstart = high_resolution_clock::now();
+
+
         }
-        
+
+
+
 
 
 
@@ -119,21 +118,21 @@ void SimulationEngine()
         if (simulation_i < simulation_end)
         {
             float step = simulation_step / 1000;
-            cout << "sim ticking" << endl;
             SimulationDoStep(simulation_i, step);
             simulation_i += step;
             i++;
         } else
         {
 
+            cout << "Runtime:" << duration_cast<milliseconds>(t_runstart - t_runend).count() << "ms" << " SimSteps:" << i << endl;
             thisServer->sim_controls.status_simulation = false;
             t_runend = high_resolution_clock::now();
             simulation_i = 0;
             simulation_step = 0;
             DeinitializeFMUs();
-            //cout << "Runtime:" << duration_cast<milliseconds>(t_runstart - t_runend).count() << "ms" << " SimSteps:" << i << endl;
-            i = 0;
             
+            i = 0;
+
         }
     }
 
@@ -150,7 +149,7 @@ void SimulationDoStep(float cur_SimTim, float cur_step)
         for (unsigned int y = 0; y < myFMUs[x].inVars.size(); y++)
         {
             myFMUs[x].load_FMU_input(y, thisServer->parentFMUs[x].inputs_SourceBuffer[y].buffer);
-            thisServer->parentFMUs[x].inputs_SourceBuffer[y].time=cur_SimTim;
+            thisServer->parentFMUs[x].inputs_SourceBuffer[y].time = cur_SimTim;
         }
         for (unsigned int y = 0; y < myFMUs[x].outVars.size(); y++)
         {
@@ -171,23 +170,23 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
 #ifdef __arm__
         //fmu.loadFMU_xml("/home/orangepi/modelDescription.xml");
         //fmu.loadFMU_so("/home/orangepi/linux_fmu_arm2.so");
-        string p_xml=getenv("HOME");
-        string p_so=getenv("HOME");
+        string p_xml = getenv("HOME");
+        string p_so = getenv("HOME");
         p_xml.append("/modelDescription.xml");
         p_so.append("/linux_fmu_arm2.so");
         fmu.loadFMU_xml(p_xml.c_str());
         fmu.loadFMU_so(p_so.c_str());
 #else
-        string p_xml=getenv("HOME");
-        string p_so=getenv("HOME");
+        string p_xml = getenv("HOME");
+        string p_so = getenv("HOME");
         p_xml.append("/xmlfolder/modelDescription.xml");
         p_so.append("/xmlfolder/linux_fmu.so");
-        
+
         fmu.loadFMU_xml(p_xml.c_str());
         fmu.loadFMU_so(p_so.c_str());
 #endif
         thisServer->initializeNode(fmu.inVars.size(), fmu.outVars.size());
-        
+
         for (unsigned int x = 0; x < fmu.inVars.size(); x++)
         {
             string s("fmu[");
@@ -200,7 +199,7 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
             thisServer->SetupNode(s, myFMUs.size(), x, true);
             //thisServer->SetupNode(fmu.inVars[x].serverNodeName);
         }
-        
+
         for (unsigned int x = 0; x < fmu.outVars.size(); x++)
         {
             string s("fmu[");
@@ -213,7 +212,7 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
             thisServer->SetupNode(s, myFMUs.size(), x, false);
             //thisServer->SetupNode(fmu.outVars[x].serverNodeName);
         }
-        
+
         myFMUs.push_back(fmu);
 
     }

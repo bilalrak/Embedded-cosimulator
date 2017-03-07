@@ -62,11 +62,6 @@ private:
             size_t inputSize, const UA_Variant *input,
             size_t outputSize, UA_Variant *output);
     
-    static UA_StatusCode modelCount_callback(
-            void *methodHandle,
-            const UA_NodeId objectId,
-            size_t inputSize, const UA_Variant *input,
-            size_t outputSize, UA_Variant *output);
 
     
     //for data source nodes in server space
