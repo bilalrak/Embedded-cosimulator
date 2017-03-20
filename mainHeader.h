@@ -39,9 +39,8 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad);
 
 //functions
 void SimulationEngine();
-void SimulationDoStep(float cur_SimTime,float cur_step);
+void SimulationDoStep(float cur_SimTime, float cur_step);
 void ConstructHashTable();
-void SimulationTimer();
 void RunTimer();
 void InitializeFMUs();
 void DeinitializeFMUs();
@@ -49,12 +48,14 @@ void DeinitializeFMUs();
 //variables and objects
 std::vector<FMUmodel> myFMUs;
 OPCUAserver * thisServer;
-float simulation_i=0;
-float simulation_end=0;
-float simulation_step=0;
+float simulation_i = 0;
+float simulation_end = 0;
+float simulation_step = 0;
 std::chrono::high_resolution_clock::time_point t_runstart;
 std::chrono::high_resolution_clock::time_point t_runend;
-
+std::chrono::high_resolution_clock::time_point t2;  //for step initializing
+std::chrono::high_resolution_clock::time_point t3;  //for step execution time measurement
+float avgExeTime=0;
 
 #endif /* MAINHEADER_H */
 

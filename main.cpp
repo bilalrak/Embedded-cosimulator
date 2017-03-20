@@ -63,6 +63,7 @@ int main(int argc, char** argv)
             simulation_step = thisServer->sim_controls.simulation_step;
             simulation_end = thisServer->sim_controls.simulation_time;
             simulation_i = 0;
+            avgExeTime=0;
             InitializeFMUs();
             thisServer->sim_controls.status_simulation = true;
             t_runstart = high_resolution_clock::now();
@@ -81,36 +82,14 @@ int main(int argc, char** argv)
     return 0;
 }
 
-void SimulationTimer()
-{
 
-    while (running)
-    {
-        //static high_resolution_clock::time_point t1=high_resolution_clock::now();
-
-        while (thisServer->sim_controls.status_simulation == true)
-        {
-            //high_resolution_clock::time_point t2 = high_resolution_clock::now();
-
-            //float temp=simulation_step*1000;
-            //long long int s=temp;
-
-
-
-            SimulationEngine();
-            //this_thread::sleep_for(milliseconds(s));
-            //cout<<"ticking"<<endl;
-        }
-    }
-
-}
 
 void SimulationEngine()
 {
 
-    static high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    static high_resolution_clock::time_point t1 = high_resolution_clock::now(); //timestamps to calculate step start instance
     static unsigned int i = 0;
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+     t2 = high_resolution_clock::now();//timestamps to calculate step start instance
     if (duration_cast<milliseconds>(t2 - t1).count() >= simulation_step)
     {
         //cout<<"st:"<<simulation_step<<" duration:"<<duration_cast<milliseconds>(t2 - t1).count()<<endl;
@@ -121,13 +100,16 @@ void SimulationEngine()
             SimulationDoStep(simulation_i, step);
             simulation_i += step;
             i++;
+            t3 = high_resolution_clock::now();
+            avgExeTime+= (duration_cast<milliseconds>(t3 - t1).count());
         } else
         {
-
-            cout << "Runtime:" << duration_cast<milliseconds>(t_runstart - t_runend).count() << "ms" << " SimSteps:" << i << endl;
-            thisServer->sim_controls.status_simulation = false;
             t_runend = high_resolution_clock::now();
+            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:"<<avgExeTime/i<<"ms"<<endl;
+            
+            thisServer->sim_controls.status_simulation = false;
             simulation_i = 0;
+            avgExeTime=0;
             simulation_step = 0;
             DeinitializeFMUs();
             
