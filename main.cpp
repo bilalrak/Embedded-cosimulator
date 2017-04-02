@@ -101,11 +101,14 @@ void SimulationEngine()
             simulation_i += step;
             i++;
             t3 = high_resolution_clock::now();
-            avgExeTime+= (duration_cast<milliseconds>(t3 - t1).count());
+            
+            avgExeTime+= (duration_cast<microseconds>(t3 - t1).count());
+            //cout<<ttt<<endl;
         } else
         {
             t_runend = high_resolution_clock::now();
-            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:"<<avgExeTime/i<<"ms"<<endl;
+            avgExeTime=avgExeTime/i;
+            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:"<<(avgExeTime)<<"us"<<endl;
             
             thisServer->sim_controls.status_simulation = false;
             simulation_i = 0;
