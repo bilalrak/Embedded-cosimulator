@@ -20,6 +20,7 @@
 #include <iostream>
 #include "FMUmodel.h"
 #include "OPCUAserver.h"
+#include "FileLogger.h"
 #include <signal.h>
 #include <thread>
 #include <chrono>
@@ -56,6 +57,7 @@ std::chrono::high_resolution_clock::time_point t_runend;
 std::chrono::high_resolution_clock::time_point t2;  //for step initializing
 std::chrono::high_resolution_clock::time_point t3;  //for step execution time measurement
 float avgExeTime=0;
+FileLogger * filelogger;
 
 #endif /* MAINHEADER_H */
 

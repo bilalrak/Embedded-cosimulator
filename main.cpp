@@ -33,6 +33,7 @@ static void stopHandler(int sign)
 
 int main(int argc, char** argv)
 {
+    
     cout << "Starting Embedded Simulator" << endl;
     signal(SIGINT, stopHandler);
     thisServer = new OPCUAserver();
@@ -47,7 +48,8 @@ int main(int argc, char** argv)
     testFunction_makeFMUlist(atoi(s.c_str())); //load FMU(s) into vector for simulation 
     cout << "loaded " << myFMUs.size() << " FMU(s)" << endl;
     thisServer->startServer(); //start OPCUA server process
-
+    
+    filelogger =new FileLogger();
 
 
     while (running)
@@ -67,7 +69,7 @@ int main(int argc, char** argv)
             InitializeFMUs();
             thisServer->sim_controls.status_simulation = true;
             t_runstart = high_resolution_clock::now();
-
+            
 
         }
 
@@ -109,7 +111,7 @@ void SimulationEngine()
             t_runend = high_resolution_clock::now();
             avgExeTime=avgExeTime/i;
             cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:"<<(avgExeTime)<<"us"<<endl;
-            
+            filelogger->printSimOutput(myFMUs.size(),simulation_end,(duration_cast<milliseconds>(t_runend - t_runstart).count())/1000,simulation_step,avgExeTime/1000);
             thisServer->sim_controls.status_simulation = false;
             simulation_i = 0;
             avgExeTime=0;
