@@ -34,7 +34,7 @@ static void stopHandler(int sign)
 int main(int argc, char** argv)
 {
     
-    cout << "Starting Embedded Simulator" << endl;
+    cout << "Starting Embedded Simulator v1.0.5" << endl;
     signal(SIGINT, stopHandler);
     thisServer = new OPCUAserver();
     thisServer->loadInstanceAdd(thisServer);
@@ -100,6 +100,7 @@ void SimulationEngine()
         {
             float step = simulation_step / 1000;
             SimulationDoStep(simulation_i, step);
+            SimulationDoStep(simulation_i, step);
             simulation_i += step;
             i++;
             t3 = high_resolution_clock::now();
@@ -111,7 +112,9 @@ void SimulationEngine()
             t_runend = high_resolution_clock::now();
             avgExeTime=avgExeTime/i;
             cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:"<<(avgExeTime)<<"us"<<endl;
-            filelogger->printSimOutput(myFMUs.size(),simulation_end,(duration_cast<milliseconds>(t_runend - t_runstart).count())/1000,simulation_step,avgExeTime/1000);
+            float temp=duration_cast<milliseconds>(t_runend - t_runstart).count();
+            temp/=1000;
+            filelogger->printSimOutput(myFMUs.size(),simulation_end,temp,simulation_step,avgExeTime/1000);
             thisServer->sim_controls.status_simulation = false;
             simulation_i = 0;
             avgExeTime=0;
@@ -135,13 +138,13 @@ void SimulationDoStep(float cur_SimTim, float cur_step)
     {
         for (unsigned int y = 0; y < myFMUs[x].inVars.size(); y++)
         {
-            myFMUs[x].load_FMU_input(y, thisServer->parentFMUs[x].inputs_SourceBuffer[y].buffer);
-            thisServer->parentFMUs[x].inputs_SourceBuffer[y].time = cur_SimTim;
+            myFMUs[x].load_FMU_input(y, thisServer->FMUs_sourcebuffer[x].inputs_DataSource[y].buffer);
+            thisServer->FMUs_sourcebuffer[x].inputs_DataSource[y].time = cur_SimTim;
         }
         for (unsigned int y = 0; y < myFMUs[x].outVars.size(); y++)
         {
-            thisServer->parentFMUs[x].outputs_SourceBuffer[y].buffer = myFMUs[x].get_fmu_output(y);
-            thisServer->parentFMUs[x].outputs_SourceBuffer[y].time = cur_SimTim;
+            thisServer->FMUs_sourcebuffer[x].outputs_DataSource[y].buffer = myFMUs[x].get_fmu_output(y);
+            thisServer->FMUs_sourcebuffer[x].outputs_DataSource[y].time = cur_SimTim;
         }
         myFMUs[x].doStep(myFMUs[x].c, cur_SimTim, cur_step, fmiTrue);
 

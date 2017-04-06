@@ -135,12 +135,12 @@ UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle,const UA_
     
     if (*IsInput)
     {
-        mydouble[0] = OngoingInstance->parentFMUs[*fmuNum].inputs_SourceBuffer[*terminalNum].buffer;
-        mydouble[1] = OngoingInstance->parentFMUs[*fmuNum].inputs_SourceBuffer[*terminalNum].time;
+        mydouble[0] = OngoingInstance->FMUs_sourcebuffer[*fmuNum].inputs_DataSource[*terminalNum].buffer;
+        mydouble[1] = OngoingInstance->FMUs_sourcebuffer[*fmuNum].inputs_DataSource[*terminalNum].time;
     } else
     {
-        mydouble[0] = OngoingInstance->parentFMUs[*fmuNum].outputs_SourceBuffer[*terminalNum].buffer;
-        mydouble[1] = OngoingInstance->parentFMUs[*fmuNum].outputs_SourceBuffer[*terminalNum].time;
+        mydouble[0] = OngoingInstance->FMUs_sourcebuffer[*fmuNum].outputs_DataSource[*terminalNum].buffer;
+        mydouble[1] = OngoingInstance->FMUs_sourcebuffer[*fmuNum].outputs_DataSource[*terminalNum].time;
     }
     //UA_StatusCode retval = UA_Variant_setScalarCopy(&value->value, &mydouble,&UA_TYPES[UA_TYPES_DOUBLE]);
     UA_Variant_setArrayCopy(&value->value,&mydouble,2,&UA_TYPES[UA_TYPES_DOUBLE]);
@@ -171,8 +171,8 @@ UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle,const UA_
  * 
  * DataSource:
  * 
- * for input        OPCUAserver::parentFMUs[FMUnum].inputs_SourceBuffer[terminalNum].buffer  (type double)
- *                  OPCUAserver::parentFMUs[FMUnum].inputs_SourceBuffer[terminalNum].time    (type double)
+ * for input        OPCUAserver::FMUs_sourcebuffer[FMUnum].inputs_SourceBuffer[terminalNum].buffer  (type double)
+ *                  OPCUAserver::FMUs_sourcebuffer[FMUnum].inputs_SourceBuffer[terminalNum].time    (type double)
  * 
  * Node Details:
  * located in objects folder with UA_NodeId=UA_NODEID_STRING(1,"fmu[<FMUnum>]_in[<terminalNum>]_PN::...")
@@ -185,7 +185,7 @@ UA_StatusCode OPCUAserver::Client_writeDataSource_callback(void *handle,const UA
     //    return UA_STATUSCODE_BADINDEXRANGEINVALID;
     unsigned int *fmuNum = ((unsigned int*) handle);
     unsigned int *inputNum = ((unsigned int*) (handle + sizeof (unsigned int)));
-    OngoingInstance->parentFMUs[*fmuNum].inputs_SourceBuffer[*inputNum].buffer = *(UA_Double*) data->data;
+    OngoingInstance->FMUs_sourcebuffer[*fmuNum].inputs_DataSource[*inputNum].buffer = *(UA_Double*) data->data;
     return UA_STATUSCODE_GOOD;
 }
 
@@ -287,12 +287,12 @@ void OPCUAserver::SetupNode(std::string nodeName, unsigned int fmuNumber, unsign
 
     if (IsInput)
     {
-        this->parentFMUs[fmuNumber].inputs_SourceBuffer[terminalNumber].NodeName = nodeName;
+        this->FMUs_sourcebuffer[fmuNumber].inputs_DataSource[terminalNumber].NodeName = nodeName;
         DataSource = (UA_DataSource){.handle = NULL, .read = Client_readDataSource_callback, .write = Client_writeDataSource_callback};
 
     } else
     {
-        this->parentFMUs[fmuNumber].outputs_SourceBuffer[terminalNumber].NodeName = nodeName;
+        this->FMUs_sourcebuffer[fmuNumber].outputs_DataSource[terminalNumber].NodeName = nodeName;
         DataSource = (UA_DataSource){.handle = NULL, .read = Client_readDataSource_callback, .write = NULL};
     }
     unsigned int *h = new unsigned int[3];
@@ -347,23 +347,23 @@ void OPCUAserver::stopServer()
 
 void OPCUAserver::initializeNode(unsigned int inputs, unsigned int outputs)
 {
-    dataSourceHolder newholder;
+    FMU_sourcebuffer newholder;
 
     for (unsigned int x = 0; x < inputs; x++)
     {
-        DataSource_buffer inputbuff;
+        DataSource_terminal inputbuff;
         inputbuff.buffer = 0;
         inputbuff.time =0;
-        newholder.inputs_SourceBuffer.push_back(inputbuff);
+        newholder.inputs_DataSource.push_back(inputbuff);
     }
     for (unsigned int x = 0; x < outputs; x++)
     {
-        DataSource_buffer outputbuff;
+        DataSource_terminal outputbuff;
         outputbuff.buffer = 0;
         outputbuff.time=0;
-        newholder.outputs_SourceBuffer.push_back(outputbuff);
+        newholder.outputs_DataSource.push_back(outputbuff);
     }
-    parentFMUs.push_back(newholder);
+    FMUs_sourcebuffer.push_back(newholder);
 
 }
 

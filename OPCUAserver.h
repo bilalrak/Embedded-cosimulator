@@ -25,15 +25,15 @@ public:
     uint8_t FMUs_count;
 };
 
-struct DataSource_buffer {
+struct DataSource_terminal {
 public:
     std::string NodeName;
     double buffer;
     double time;
 };
-struct dataSourceHolder{
-    std::vector<DataSource_buffer> inputs_SourceBuffer;
-    std::vector<DataSource_buffer> outputs_SourceBuffer;
+struct FMU_sourcebuffer{
+    std::vector<DataSource_terminal> inputs_DataSource;
+    std::vector<DataSource_terminal> outputs_DataSource;
 };
 
 class OPCUAserver {
@@ -49,7 +49,7 @@ private:
     UA_ServerConfig config;
     UA_ServerNetworkLayer nl;
     UA_Server *server;
-
+    UA_Boolean run_server;
 
     //for methods in server space
     //UA_Argument inputArguments2;
@@ -90,11 +90,14 @@ private:
     
     
     //bool flag to end server run thread
-    UA_Boolean run_server;
+    
 
 public:
     //public class methods and variables
     static OPCUAserver * OngoingInstance;
+    simulation_controls sim_controls;
+    std::vector<FMU_sourcebuffer> FMUs_sourcebuffer;
+    
     void loadInstanceAdd(OPCUAserver*add);
     OPCUAserver();
     void InitializeServer();
@@ -102,8 +105,6 @@ public:
     void startServer();
     void stopServer();
     //void setNodeValue(std::string nodeName, fmiReal value);
-    simulation_controls sim_controls;
-    std::vector<dataSourceHolder> parentFMUs;
     void initializeNode(unsigned int inputs,unsigned int outputs);
 
 
