@@ -11,15 +11,13 @@
 
 
 using namespace std;
-mutex m;
+//mutex m;
 OPCUAserver * OPCUAserver::OngoingInstance = 0;
 
 void OPCUAserver::loadInstanceAdd(OPCUAserver*add)
 {
     OPCUAserver::OngoingInstance = add;
 }
-
-
 
 /*
  * callback:
@@ -67,10 +65,6 @@ UA_StatusCode OPCUAserver::startSimMethod_callback(
     return UA_STATUSCODE_GOOD;
 }
 
-
-
-
-
 /*
  * callback:
  * This callback is called when client sends a read request for simulation status node. the
@@ -84,7 +78,7 @@ UA_StatusCode OPCUAserver::startSimMethod_callback(
  * NodeClass = Variable
  * Scalar
  */
-UA_StatusCode OPCUAserver::Client_readSimulationStatus_callback(void *handle,const UA_NodeId nodeId,UA_Boolean sourceTimeStamp,const UA_NumericRange *range,UA_DataValue *value)
+UA_StatusCode OPCUAserver::Client_readSimulationStatus_callback(void *handle, const UA_NodeId nodeId, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *value)
 {
     value->hasValue = true;
     UA_StatusCode retval = UA_Variant_setScalarCopy(&value->value, &OngoingInstance->sim_controls.status_simulation,
@@ -92,11 +86,8 @@ UA_StatusCode OPCUAserver::Client_readSimulationStatus_callback(void *handle,con
     value->sourceTimestamp = UA_DateTime_now();
     value->hasSourceTimestamp = true;
     return UA_STATUSCODE_GOOD;
-    
+
 }
-
-
-
 
 /*
  * callback:
@@ -125,14 +116,15 @@ UA_StatusCode OPCUAserver::Client_readSimulationStatus_callback(void *handle,con
  * NodeClass = Variable
  * array
  */
-UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle,const UA_NodeId nodeId,UA_Boolean sourceTimeStamp,const UA_NumericRange *range,UA_DataValue *value)
+UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle, const UA_NodeId nodeId, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *value)
 {
+    cout<<"entering readData source callback"<<endl;
     value->hasValue = true;
     unsigned int *fmuNum = ((unsigned int*) handle);
     unsigned int *terminalNum = ((unsigned int*) (handle + sizeof (unsigned int)));
     unsigned int *IsInput = ((unsigned int*) (handle + sizeof (unsigned int)*2));
     UA_Double mydouble[2];
-    
+
     if (*IsInput)
     {
         mydouble[0] = OngoingInstance->FMUs_sourcebuffer[*fmuNum].inputs_DataSource[*terminalNum].buffer;
@@ -143,15 +135,12 @@ UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle,const UA_
         mydouble[1] = OngoingInstance->FMUs_sourcebuffer[*fmuNum].outputs_DataSource[*terminalNum].time;
     }
     //UA_StatusCode retval = UA_Variant_setScalarCopy(&value->value, &mydouble,&UA_TYPES[UA_TYPES_DOUBLE]);
-    UA_Variant_setArrayCopy(&value->value,&mydouble,2,&UA_TYPES[UA_TYPES_DOUBLE]);
+    UA_Variant_setArrayCopy(&value->value, &mydouble, 2, &UA_TYPES[UA_TYPES_DOUBLE]);
     value->sourceTimestamp = UA_DateTime_now();
     value->hasSourceTimestamp = true;
+    cout<<"leaving the readData source callback"<<endl;
     return UA_STATUSCODE_GOOD;
 }
-
-
-
-
 
 /*
  * callback:
@@ -179,7 +168,7 @@ UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle,const UA_
  * NodeClass = Variable
  * array
  */
-UA_StatusCode OPCUAserver::Client_writeDataSource_callback(void *handle,const UA_NodeId nodeid,const UA_Variant *data,const UA_NumericRange *range)
+UA_StatusCode OPCUAserver::Client_writeDataSource_callback(void *handle, const UA_NodeId nodeid, const UA_Variant *data, const UA_NumericRange *range)
 {
     //if (range)
     //    return UA_STATUSCODE_BADINDEXRANGEINVALID;
@@ -249,7 +238,7 @@ void OPCUAserver::InitializeServer()
             (void *) server, // Pass our server pointer as a handle to the method
             1, &inputArguments, 1, &outputArguments, NULL);
 
-    
+
     UA_DataSource DataSource;
     DataSource = (UA_DataSource){.handle = NULL, .read = Client_readSimulationStatus_callback, .write = NULL};
     string nodeName = "simulationStatus";
@@ -277,7 +266,7 @@ void OPCUAserver::InitializeServer()
 
 UA_ByteString OPCUAserver::loadCertificate(void)
 {
-    
+
 }
 
 void OPCUAserver::SetupNode(std::string nodeName, unsigned int fmuNumber, unsigned int terminalNumber, bool IsInput)
@@ -306,15 +295,15 @@ void OPCUAserver::SetupNode(std::string nodeName, unsigned int fmuNumber, unsign
     v_attr.description = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName.c_str());
     v_attr.displayName = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName.c_str());
     UA_Double myFloatnode[2];
-    myFloatnode[1]=2;
-    myFloatnode[2]=3;
+    myFloatnode[1] = 2;
+    myFloatnode[2] = 3;
     //UA_Variant_setScalarCopy(&v_attr.value, &myFloatnode, &UA_TYPES[UA_TYPES_DOUBLE]);
     //A_Variant_setArray(&v_attr.value, UA_Array_new(2, &UA_TYPES[UA_TYPES_DOUBLE]),2, &UA_TYPES[UA_TYPES_DOUBLE]);
-    UA_Variant_setArrayCopy(&v_attr.value,&myFloatnode,2,&UA_TYPES[UA_TYPES_DOUBLE]);
-    
+    UA_Variant_setArrayCopy(&v_attr.value, &myFloatnode, 2, &UA_TYPES[UA_TYPES_DOUBLE]);
+
     v_attr.accessLevel = UA_ACCESSLEVELMASK_READ | UA_ACCESSLEVELMASK_WRITE;
     const UA_QualifiedName qualifiedn = UA_QUALIFIEDNAME(1, "datasourceNode");
-    
+
     UA_Server_addDataSourceVariableNode(server,
             UA_NODEID_STRING_ALLOC(1, nodeName.c_str()), //1
             UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), //2
@@ -324,9 +313,9 @@ void OPCUAserver::SetupNode(std::string nodeName, unsigned int fmuNumber, unsign
             v_attr, //6
             DataSource, //7
             NULL); //8
-    
+
     UA_Variant_deleteMembers(&v_attr.value);
-    
+
 }
 
 void OPCUAserver::runServer()
@@ -337,6 +326,7 @@ void OPCUAserver::runServer()
 void OPCUAserver::startServer()
 {
     thread mythread(&OPCUAserver::runServer, this);
+    //runServer();
     mythread.detach();
 }
 
@@ -345,7 +335,7 @@ void OPCUAserver::stopServer()
     run_server = false;
 }
 
-void OPCUAserver::initializeNode(unsigned int inputs, unsigned int outputs)
+void OPCUAserver::initialize_FMUbuffer(unsigned int inputs, unsigned int outputs)
 {
     FMU_sourcebuffer newholder;
 
@@ -353,14 +343,14 @@ void OPCUAserver::initializeNode(unsigned int inputs, unsigned int outputs)
     {
         DataSource_terminal inputbuff;
         inputbuff.buffer = 0;
-        inputbuff.time =0;
+        inputbuff.time = 0;
         newholder.inputs_DataSource.push_back(inputbuff);
     }
     for (unsigned int x = 0; x < outputs; x++)
     {
         DataSource_terminal outputbuff;
         outputbuff.buffer = 0;
-        outputbuff.time=0;
+        outputbuff.time = 0;
         newholder.outputs_DataSource.push_back(outputbuff);
     }
     FMUs_sourcebuffer.push_back(newholder);

@@ -11,9 +11,13 @@
 #include "FMUmodel.h"
 #include <string>
 #include <vector>
-#include <thread>
 #include <iostream>
-#include <mutex>
+//#include <thread>
+//#include <mutex>
+#ifdef _WIN32
+#include "mingw.thread_1.h"
+#include "mingw.mutex_1.h"
+#endif
 
 struct simulation_controls {
 public:
@@ -105,7 +109,7 @@ public:
     void startServer();
     void stopServer();
     //void setNodeValue(std::string nodeName, fmiReal value);
-    void initializeNode(unsigned int inputs,unsigned int outputs);
+    void initialize_FMUbuffer(unsigned int inputs,unsigned int outputs);
 
 
 

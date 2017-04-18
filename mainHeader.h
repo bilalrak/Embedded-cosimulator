@@ -45,7 +45,9 @@ void ConstructHashTable();
 void RunTimer();
 void InitializeFMUs();
 void DeinitializeFMUs();
-
+#ifdef _WIN32
+std::string ExePath();
+#endif
 //variables and objects
 std::vector<FMUmodel> myFMUs;
 OPCUAserver * thisServer;

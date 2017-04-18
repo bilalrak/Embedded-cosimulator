@@ -14,14 +14,10 @@
 #include <cstdlib>
 #include "mainHeader.h"
 #include "fileReader.h"
+
+
 using namespace std;
 using namespace chrono;
-
-
-
-
-
-
 
 UA_Boolean running = true;
 
@@ -33,8 +29,8 @@ static void stopHandler(int sign)
 
 int main(int argc, char** argv)
 {
-    
-    cout << "Starting Embedded Simulator v1.0.5" << endl;
+
+    cout << "Starting Embedded Simulator v1.0.6" << endl;
     signal(SIGINT, stopHandler);
     thisServer = new OPCUAserver();
     thisServer->loadInstanceAdd(thisServer);
@@ -48,10 +44,13 @@ int main(int argc, char** argv)
     testFunction_makeFMUlist(atoi(s.c_str())); //load FMU(s) into vector for simulation 
     cout << "loaded " << myFMUs.size() << " FMU(s)" << endl;
     thisServer->startServer(); //start OPCUA server process
+
+#ifdef _WIN32
     
-    filelogger =new FileLogger();
-
-
+    filelogger = new FileLogger(ExePath());
+#else
+    filelogger = new FileLogger(getenv("HOME"));
+#endif
     while (running)
     {
         if (thisServer->sim_controls.status_simulation == true)
@@ -65,33 +64,23 @@ int main(int argc, char** argv)
             simulation_step = thisServer->sim_controls.simulation_step;
             simulation_end = thisServer->sim_controls.simulation_time;
             simulation_i = 0;
-            avgExeTime=0;
+            avgExeTime = 0;
             InitializeFMUs();
             thisServer->sim_controls.status_simulation = true;
             t_runstart = high_resolution_clock::now();
-            
-
         }
-
-
-
-
-
-
     }
     //free fmu slave instances
 
     return 0;
 }
 
-
-
 void SimulationEngine()
 {
 
     static high_resolution_clock::time_point t1 = high_resolution_clock::now(); //timestamps to calculate step start instance
     static unsigned int i = 0;
-     t2 = high_resolution_clock::now();//timestamps to calculate step start instance
+    t2 = high_resolution_clock::now(); //timestamps to calculate step start instance
     if (duration_cast<milliseconds>(t2 - t1).count() >= simulation_step)
     {
         //cout<<"st:"<<simulation_step<<" duration:"<<duration_cast<milliseconds>(t2 - t1).count()<<endl;
@@ -104,32 +93,26 @@ void SimulationEngine()
             simulation_i += step;
             i++;
             t3 = high_resolution_clock::now();
-            
-            avgExeTime+= (duration_cast<microseconds>(t3 - t1).count());
+
+            avgExeTime += (duration_cast<microseconds>(t3 - t1).count());
             //cout<<ttt<<endl;
         } else
         {
             t_runend = high_resolution_clock::now();
-            avgExeTime=avgExeTime/i;
-            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:"<<(avgExeTime)<<"us"<<endl;
-            float temp=duration_cast<milliseconds>(t_runend - t_runstart).count();
-            temp/=1000;
-            filelogger->printSimOutput(myFMUs.size(),simulation_end,temp,simulation_step,avgExeTime/1000);
+            avgExeTime = avgExeTime / i;
+            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:" << (avgExeTime) << "us" << endl;
+            float temp = duration_cast<milliseconds>(t_runend - t_runstart).count();
+            temp /= 1000;
+            filelogger->printSimOutput(myFMUs.size(), simulation_end, temp, simulation_step, avgExeTime / 1000);
             thisServer->sim_controls.status_simulation = false;
             simulation_i = 0;
-            avgExeTime=0;
+            avgExeTime = 0;
             simulation_step = 0;
             DeinitializeFMUs();
-            
-            i = 0;
 
+            i = 0;
         }
     }
-
-
-
-
-
 }
 
 void SimulationDoStep(float cur_SimTim, float cur_step)
@@ -166,6 +149,16 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
         p_so.append("/linux_fmu_arm2.so");
         fmu.loadFMU_xml(p_xml.c_str());
         fmu.loadFMU_so(p_so.c_str());
+#else 
+#ifdef _WIN32
+        string p_xml = ExePath();
+        string p_dll =ExePath();
+        
+        p_xml+="/modelDescription.xml";
+        p_dll+="/windows_fmu.dll";
+       
+        fmu.loadFMU_xml(p_xml.c_str());
+        fmu.loadFMU_so(p_dll.c_str());
 #else
         string p_xml = getenv("HOME");
         string p_so = getenv("HOME");
@@ -175,7 +168,8 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
         fmu.loadFMU_xml(p_xml.c_str());
         fmu.loadFMU_so(p_so.c_str());
 #endif
-        thisServer->initializeNode(fmu.inVars.size(), fmu.outVars.size());
+#endif
+        thisServer->initialize_FMUbuffer(fmu.inVars.size(), fmu.outVars.size());
 
         for (unsigned int x = 0; x < fmu.inVars.size(); x++)
         {
@@ -202,9 +196,7 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
             thisServer->SetupNode(s, myFMUs.size(), x, false);
             //thisServer->SetupNode(fmu.outVars[x].serverNodeName);
         }
-
         myFMUs.push_back(fmu);
-
     }
 }
 
@@ -215,7 +207,6 @@ void InitializeFMUs()
         float step = simulation_step / 1000;
         myFMUs[x].init_FMU_inputs();
         myFMUs[x].load_FMU_Component(step, simulation_end);
-
     }
 }
 
@@ -224,3 +215,16 @@ void DeinitializeFMUs()
     for (unsigned int x = 0; x < myFMUs.size(); x++)
         myFMUs[x].unload_FMU_Component();
 }
+
+
+#ifdef _WIN32
+
+string ExePath()
+{
+
+    char buffer[50];
+    GetModuleFileName(NULL, buffer, 50);
+    string::size_type pos = string(buffer).find_last_of("\\/");
+    return string(buffer).substr(0, pos);
+}
+#endif
