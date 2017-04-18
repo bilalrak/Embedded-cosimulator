@@ -118,11 +118,11 @@ UA_StatusCode OPCUAserver::Client_readSimulationStatus_callback(void *handle, co
  */
 UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle, const UA_NodeId nodeId, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *value)
 {
-    cout<<"entering readData source callback"<<endl;
+    cout<<"test -reached here"<<endl;
     value->hasValue = true;
     unsigned int *fmuNum = ((unsigned int*) handle);
     unsigned int *terminalNum = ((unsigned int*) (handle + sizeof (unsigned int)));
-    unsigned int *IsInput = ((unsigned int*) (handle + sizeof (unsigned int)*2));
+    unsigned int *IsInput =((unsigned int*) (handle + sizeof (unsigned int)*2));
     UA_Double mydouble[2];
 
     if (*IsInput)
@@ -138,8 +138,9 @@ UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle, const UA
     UA_Variant_setArrayCopy(&value->value, &mydouble, 2, &UA_TYPES[UA_TYPES_DOUBLE]);
     value->sourceTimestamp = UA_DateTime_now();
     value->hasSourceTimestamp = true;
-    cout<<"leaving the readData source callback"<<endl;
+    cout<<"test -exiting callback"<<endl;
     return UA_STATUSCODE_GOOD;
+    
 }
 
 /*

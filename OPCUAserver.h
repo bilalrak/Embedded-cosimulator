@@ -12,11 +12,12 @@
 #include <string>
 #include <vector>
 #include <iostream>
-//#include <thread>
-//#include <mutex>
+#include <mutex>
 #ifdef _WIN32
 #include "mingw.thread_1.h"
 #include "mingw.mutex_1.h"
+#else
+#include <thread>
 #endif
 
 struct simulation_controls {
