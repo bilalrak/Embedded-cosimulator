@@ -30,7 +30,7 @@ static void stopHandler(int sign)
 int main(int argc, char** argv)
 {
 
-    cout << "Starting Embedded Simulator v1.0.6" << endl;
+    cout << "Starting Embedded Simulator v1.0.9" << endl;
     signal(SIGINT, stopHandler);
     thisServer = new OPCUAserver();
     thisServer->loadInstanceAdd(thisServer);

@@ -11,7 +11,6 @@
 
 
 using namespace std;
-//mutex m;
 OPCUAserver * OPCUAserver::OngoingInstance = 0;
 
 void OPCUAserver::loadInstanceAdd(OPCUAserver*add)
@@ -118,7 +117,6 @@ UA_StatusCode OPCUAserver::Client_readSimulationStatus_callback(void *handle, co
  */
 UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle, const UA_NodeId nodeId, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *value)
 {
-    cout<<"test -reached here"<<endl;
     value->hasValue = true;
     unsigned int *fmuNum = ((unsigned int*) handle);
     unsigned int *terminalNum = ((unsigned int*) (handle + sizeof (unsigned int)));
@@ -138,7 +136,6 @@ UA_StatusCode OPCUAserver::Client_readDataSource_callback(void *handle, const UA
     UA_Variant_setArrayCopy(&value->value, &mydouble, 2, &UA_TYPES[UA_TYPES_DOUBLE]);
     value->sourceTimestamp = UA_DateTime_now();
     value->hasSourceTimestamp = true;
-    cout<<"test -exiting callback"<<endl;
     return UA_STATUSCODE_GOOD;
     
 }
@@ -187,6 +184,7 @@ OPCUAserver::OPCUAserver()
 
 void OPCUAserver::InitializeServer()
 {
+    char str_en[]="en_US";
 
     config = UA_ServerConfig_standard;
     nl = UA_ServerNetworkLayerTCP(UA_ConnectionConfig_standard, 16664);
@@ -212,7 +210,7 @@ void OPCUAserver::InitializeServer()
     inputArguments.arrayDimensions = pOutputDimensions;
     //inputArguments.arrayDimensions = NULL;
     inputArguments.dataType = UA_TYPES[UA_TYPES_UINT32].typeId;
-    inputArguments.description = UA_LOCALIZEDTEXT("en_US", "[0]-steptime (ms)\n[1]-runtime (s)");
+    inputArguments.description = UA_LOCALIZEDTEXT(str_en, "[0]-steptime (ms)\n[1]-runtime (s)");
     inputArguments.name = UA_STRING("Simulation parameters");
     inputArguments.valueRank = 1;
 
@@ -221,20 +219,26 @@ void OPCUAserver::InitializeServer()
     outputArguments.arrayDimensionsSize = 0;
     outputArguments.arrayDimensions = NULL;
     outputArguments.dataType = UA_TYPES[UA_TYPES_STRING].typeId;
-    outputArguments.description = UA_LOCALIZEDTEXT("en_US", "reply message from server");
-    outputArguments.name = UA_STRING("reply");
+    char mystr6[]="reply message from server";
+    outputArguments.description = UA_LOCALIZEDTEXT(str_en, mystr6);
+    
+    char mystr5[]="reply";
+    outputArguments.name = UA_STRING(mystr5);
     outputArguments.valueRank = -1;
 
     UA_MethodAttributes addmethodattributes;
     UA_MethodAttributes_init(&addmethodattributes);
-    addmethodattributes.description = UA_LOCALIZEDTEXT("en_US", "Starts FMI simulation on the server");
-    addmethodattributes.displayName = UA_LOCALIZEDTEXT("en_US", "StartSim");
+    char mystr4[]="Starts FMI simulation on the server";
+    addmethodattributes.description = UA_LOCALIZEDTEXT(str_en, mystr4);
+    char mystr3[]="StartSim";
+    addmethodattributes.displayName = UA_LOCALIZEDTEXT(str_en, mystr3);
     addmethodattributes.executable = true;
     addmethodattributes.userExecutable = true;
+    char mystr2[]="StartSim";
     UA_Server_addMethodNode(server, UA_NODEID_NUMERIC(1, 62541),
             UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
             UA_NODEID_NUMERIC(0, UA_NS0ID_HASCOMPONENT),
-            UA_QUALIFIEDNAME(1, "StartSim"), addmethodattributes,
+            UA_QUALIFIEDNAME(1, mystr2), addmethodattributes,
             &startSimMethod_callback, // Call this method
             (void *) server, // Pass our server pointer as a handle to the method
             1, &inputArguments, 1, &outputArguments, NULL);
@@ -250,7 +254,8 @@ void OPCUAserver::InitializeServer()
     UA_Double myFloatnode = 0;
     UA_Variant_setScalarCopy(&v_attr.value, &myFloatnode, &UA_TYPES[UA_TYPES_DOUBLE]);
     v_attr.accessLevel = UA_ACCESSLEVELMASK_READ | UA_ACCESSLEVELMASK_WRITE;
-    const UA_QualifiedName qualifiedn = UA_QUALIFIEDNAME(1, "simulationStatus");
+    char mystr1[]="simulationStatus";
+    const UA_QualifiedName qualifiedn = UA_QUALIFIEDNAME(1, mystr1);
 
     UA_Server_addDataSourceVariableNode(server,
             UA_NODEID_NUMERIC(1, 13000), //1
@@ -293,8 +298,9 @@ void OPCUAserver::SetupNode(std::string nodeName, unsigned int fmuNumber, unsign
 
     UA_VariableAttributes v_attr;
     UA_VariableAttributes_init(&v_attr);
-    v_attr.description = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName.c_str());
-    v_attr.displayName = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName.c_str());
+    char str_en[] ="en_US";
+    v_attr.description = UA_LOCALIZEDTEXT_ALLOC(str_en, nodeName.c_str());
+    v_attr.displayName = UA_LOCALIZEDTEXT_ALLOC(str_en, nodeName.c_str());
     UA_Double myFloatnode[2];
     myFloatnode[1] = 2;
     myFloatnode[2] = 3;
@@ -303,8 +309,8 @@ void OPCUAserver::SetupNode(std::string nodeName, unsigned int fmuNumber, unsign
     UA_Variant_setArrayCopy(&v_attr.value, &myFloatnode, 2, &UA_TYPES[UA_TYPES_DOUBLE]);
 
     v_attr.accessLevel = UA_ACCESSLEVELMASK_READ | UA_ACCESSLEVELMASK_WRITE;
-    const UA_QualifiedName qualifiedn = UA_QUALIFIEDNAME(1, "datasourceNode");
-
+    char mystr[]="datasourceNode";
+    const UA_QualifiedName qualifiedn = UA_QUALIFIEDNAME(1, mystr);
     UA_Server_addDataSourceVariableNode(server,
             UA_NODEID_STRING_ALLOC(1, nodeName.c_str()), //1
             UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), //2
