@@ -30,7 +30,7 @@ static void stopHandler(int sign)
 int main(int argc, char** argv)
 {
 
-    cout << "Starting Embedded Simulator v1.0.9" << endl;
+    cout << "Starting Embedded Simulator v2.0.0" << endl;
     signal(SIGINT, stopHandler);
     thisServer = new OPCUAserver();
     thisServer->loadInstanceAdd(thisServer);
@@ -67,7 +67,9 @@ int main(int argc, char** argv)
             avgExeTime = 0;
             InitializeFMUs();
             thisServer->sim_controls.status_simulation = true;
+            
             t_runstart = high_resolution_clock::now();
+           
         }
     }
     //free fmu slave instances
@@ -79,39 +81,50 @@ void SimulationEngine()
 {
 
     static high_resolution_clock::time_point t1 = high_resolution_clock::now(); //timestamps to calculate step start instance
-    static unsigned int i = 0;
+    static uint32_t i = 0;
+    static double WCET=0;
     t2 = high_resolution_clock::now(); //timestamps to calculate step start instance
     if (duration_cast<milliseconds>(t2 - t1).count() >= simulation_step)
     {
+        
         //cout<<"st:"<<simulation_step<<" duration:"<<duration_cast<milliseconds>(t2 - t1).count()<<endl;
         t1 = t2;
         if (simulation_i < simulation_end)
-        {
-            float step = simulation_step / 1000;
-            SimulationDoStep(simulation_i, step);
+        {   
+            double step = simulation_step / 1000;
             SimulationDoStep(simulation_i, step);
             simulation_i += step;
             i++;
             t3 = high_resolution_clock::now();
-
+#ifdef fullLoging //controlled from FileLogger.h file
+            filelogger->printSim_t_exe((duration_cast<microseconds>(t3 - t1).count()));
             avgExeTime += (duration_cast<microseconds>(t3 - t1).count());
-            //cout<<ttt<<endl;
+#else
+            double temp=(duration_cast<microseconds>(t3-t1).count());
+            if(WCET<temp)
+                WCET=temp;
+            
+            avgExeTime +=temp;
+                
+#endif
         } else
         {
             t_runend = high_resolution_clock::now();
             avgExeTime = avgExeTime / i;
-            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:" << (avgExeTime) << "us" << endl;
-            float temp = duration_cast<milliseconds>(t_runend - t_runstart).count();
+            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:" << (avgExeTime) << "us" << " || WCET:"<<WCET<< "us"<<endl;
+            double temp = duration_cast<milliseconds>(t_runend - t_runstart).count();
             temp /= 1000;
-            filelogger->printSimOutput(myFMUs.size(), simulation_end, temp, simulation_step, avgExeTime / 1000);
+            filelogger->printSimOutputs(myFMUs.size(), simulation_end, temp, simulation_step,i,WCET);
             thisServer->sim_controls.status_simulation = false;
             simulation_i = 0;
             avgExeTime = 0;
             simulation_step = 0;
             DeinitializeFMUs();
 
+            WCET=0;
             i = 0;
         }
+        
     }
 }
 
@@ -129,8 +142,9 @@ void SimulationDoStep(float cur_SimTim, float cur_step)
             thisServer->FMUs_sourcebuffer[x].outputs_DataSource[y].buffer = myFMUs[x].get_fmu_output(y);
             thisServer->FMUs_sourcebuffer[x].outputs_DataSource[y].time = cur_SimTim;
         }
+        
         myFMUs[x].doStep(myFMUs[x].c, cur_SimTim, cur_step, fmiTrue);
-
+        
     }
 }
 
@@ -141,16 +155,23 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
         FMUmodel fmu;
 
 #ifdef __arm__
-        //fmu.loadFMU_xml("/home/orangepi/modelDescription.xml");
-        //fmu.loadFMU_so("/home/orangepi/linux_fmu_arm2.so");
         string p_xml = getenv("HOME");
         string p_so = getenv("HOME");
         p_xml.append("/modelDescription.xml");
         p_so.append("/linux_fmu_arm2.so");
         fmu.loadFMU_xml(p_xml.c_str());
         fmu.loadFMU_so(p_so.c_str());
-#else 
-#ifdef _WIN32
+
+#elif defined __i586__
+        string p_xml = getenv("HOME");
+        string p_so = getenv("HOME");
+        p_xml.append("/modelDescription.xml");
+        p_so.append("/linux_fmu_quark.so");
+        fmu.loadFMU_xml(p_xml.c_str());
+        fmu.loadFMU_so(p_so.c_str());
+        
+
+#elif defined _WIN32
         string p_xml = ExePath();
         string p_dll =ExePath();
         
@@ -163,11 +184,10 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
         string p_xml = getenv("HOME");
         string p_so = getenv("HOME");
         p_xml.append("/xmlfolder/modelDescription.xml");
-        p_so.append("/xmlfolder/linux_fmu.so");
+        p_so.append("/xmlfolder/linux_fmu_x64.so");
 
         fmu.loadFMU_xml(p_xml.c_str());
         fmu.loadFMU_so(p_so.c_str());
-#endif
 #endif
         thisServer->initialize_FMUbuffer(fmu.inVars.size(), fmu.outVars.size());
 

@@ -31,6 +31,12 @@ FMUmodel::~FMUmodel()
     // TODO Auto-generated destructor stub
 }
 
+void FMUmodel::fmuLogger(fmiComponent c, fmiString instanceName, fmiStatus status,
+               fmiString category, fmiString message, ...)
+{
+    cout<<"FMUlogger:"<<message<<endl;
+}
+
 void * FMUmodel::getaddr(const char * nameOfFmiFunction)
 {
 
@@ -324,13 +330,15 @@ bool FMUmodel::load_FMU_Component(float h, float tend)
     char* fmulocation = NULL;
     callbacks.allocateMemory = calloc;
     callbacks.freeMemory = free;
-    //callbacks.stepFinished = NULL;
+    callbacks.stepFinished = NULL;
     callbacks.logger = NULL;
     c = instantiateSlave(id, guid, fmulocation, mimeType, timeout,
             visible, interactive, callbacks, false);
-
+    //this component don't get assigned a value.. says Bernhardt
 
     bool status = initializeSlave(c, 0, fmiFalse, 10);
+//    cout<< "load component c: address:"<<c<<endl;
+//    cout<<"load component c: returnval:"<<status<<endl;
     return status;
 }
 

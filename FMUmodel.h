@@ -98,7 +98,8 @@ private:
     void * getaddr(const char * nameOfFmiFunction);
     bool bindfunctionaddresses(void); //import symbols from shared object and store them in function pointers of class
     HANDLE soHandle;
-
+    static void fmuLogger(fmiComponent c, fmiString instanceName, fmiStatus status,
+               fmiString category, fmiString message, ...);
 
 
 

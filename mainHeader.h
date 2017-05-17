@@ -51,14 +51,14 @@ std::string ExePath();
 //variables and objects
 std::vector<FMUmodel> myFMUs;
 OPCUAserver * thisServer;
-float simulation_i = 0;
-float simulation_end = 0;
-float simulation_step = 0;
+double simulation_i = 0;
+double simulation_end = 0;
+double simulation_step = 0;
 std::chrono::high_resolution_clock::time_point t_runstart;
 std::chrono::high_resolution_clock::time_point t_runend;
 std::chrono::high_resolution_clock::time_point t2;  //for step initializing
 std::chrono::high_resolution_clock::time_point t3;  //for step execution time measurement
-float avgExeTime=0;
+double avgExeTime=0;
 FileLogger * filelogger;
 
 #endif /* MAINHEADER_H */

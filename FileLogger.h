@@ -17,16 +17,20 @@
 #ifndef FILELOGGER_H
 #define FILELOGGER_H
 
+//#define fullLoging
+
+
 class FileLogger {
 public:
     FileLogger(std::string path);
     FileLogger(const FileLogger& orig);
     virtual ~FileLogger();
-    void printSimOutput(unsigned int N_FMUs, float runTime,float simulatedRunTime,float stepSize, float T_exec);
+    void printSimOutputs(unsigned int N_FMUs, double runTime,double simulatedRunTime,double stepSize,uint32_t iterations,double WCET);
+    void printSim_t_exe(double t_exe);
+
 private:
     std::fstream file;
     std::string fullFileName;
-    
     
 };
 

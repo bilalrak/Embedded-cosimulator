@@ -18,13 +18,23 @@
 
 using namespace std;
 
+
 FileLogger::FileLogger(string path)
 {
    
     //string myhome = getenv("HOME");
     fullFileName = path.append("/simulation_result.csv");
+    
+ 
     file.open(fullFileName.c_str(),ios::out|ios::trunc);
-    file<<"# FMUs,Runtime (s),simulated Runtime (s),StepSize (ms),T-exec (ms)"<<endl;
+#ifdef fullLoging 
+    /*fullLoging logs the texe in every iteration of simulation
+     * else only the Worst Case Execution time is logged 
+     */
+    file<<"t-exe (us),# FMUs,Runtime (s),simulated Runtime (s),StepSize (ms),iterations"<<endl;
+#else
+    file<<"WCET (us),# FMUs,Runtime (s),simulated Runtime (s),StepSize (ms),iterations"<<endl;
+#endif
     file.close();
     file.open(fullFileName,ios::out|ios::app);
 }
@@ -33,11 +43,22 @@ FileLogger::FileLogger(const FileLogger& orig)
 {
 }
 
-void FileLogger::printSimOutput(unsigned int N_FMUs, float runTime,float simulatedRunTime,float stepSize, float T_exec)
+void FileLogger::printSimOutputs(unsigned int N_FMUs, double runTime,double simulatedRunTime,double stepSize,uint32_t iterations,double WCET)
 {
-    file<<N_FMUs<<","<<runTime<<","<<simulatedRunTime<<","<<stepSize<<","<<T_exec<<endl;
+#ifdef fullLoging
+    file<<"--"<<","<<N_FMUs<<","<<runTime<<","<<simulatedRunTime<<","<<stepSize<<","<<iterations<<endl;
+#else
+    file<<WCET<<","<<N_FMUs<<","<<runTime<<","<<simulatedRunTime<<","<<stepSize<<","<<iterations<<endl;
+#endif
     
 }
+void FileLogger::printSim_t_exe(double t_exe)
+{
+    file<<t_exe<<endl;
+}
+
+
+
 
 
 FileLogger::~FileLogger()
