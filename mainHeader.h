@@ -54,8 +54,15 @@ OPCUAserver * thisServer;
 double simulation_i = 0;
 double simulation_end = 0;
 double simulation_step = 0;
-std::chrono::high_resolution_clock::time_point t_runstart;
+
+//for calculating total simulation run
+std::chrono::high_resolution_clock::time_point t_runstart;  
 std::chrono::high_resolution_clock::time_point t_runend;
+
+//for calculating simulation step for synchronization 
+std::chrono::high_resolution_clock::time_point t1;
+
+//for t-exe measurement 
 std::chrono::high_resolution_clock::time_point t2;  //for step initializing
 std::chrono::high_resolution_clock::time_point t3;  //for step execution time measurement
 double avgExeTime=0;

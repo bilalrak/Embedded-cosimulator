@@ -50,7 +50,7 @@ void FileLogger::printSimOutputs(unsigned int N_FMUs, double runTime,double simu
 #else
     file<<WCET<<","<<N_FMUs<<","<<runTime<<","<<simulatedRunTime<<","<<stepSize<<","<<iterations<<endl;
 #endif
-    
+    file<<"\n\n\n\n\n"<<endl;
 }
 void FileLogger::printSim_t_exe(double t_exe)
 {

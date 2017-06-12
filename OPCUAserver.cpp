@@ -8,6 +8,8 @@
 #include "OPCUAserver.h"
 #include "open62541.h"
 #include <errno.h>
+#include <unistd.h>
+//#include <unistd.h>
 
 
 using namespace std;
@@ -176,6 +178,14 @@ UA_StatusCode OPCUAserver::Client_writeDataSource_callback(void *handle, const U
     return UA_STATUSCODE_GOOD;
 }
 
+
+
+
+
+
+
+
+
 OPCUAserver::OPCUAserver()
 {
     // TODO Auto-generated constructor stub
@@ -185,21 +195,25 @@ OPCUAserver::OPCUAserver()
 void OPCUAserver::InitializeServer()
 {
     char str_en[]="en_US";
-
+    
+    /*setting up server*/
     config = UA_ServerConfig_standard;
     nl = UA_ServerNetworkLayerTCP(UA_ConnectionConfig_standard, 16664);
     config.networkLayers = &nl;
     config.networkLayersSize = 1;
     server = UA_Server_new(config);
     run_server = true;
+    
+    
     sim_controls.simulation_step = 0;
     sim_controls.simulation_time = 0;
     sim_controls.start_simulation = false;
     sim_controls.status_simulation = false;
-    //SetupNode("Step_size");
-    //SetupNode("Run_time");
+   
 
-
+    /*
+     * StartSim method
+     */
     //add method calls in the server space
     UA_Argument inputArguments;
     UA_Argument_init(&inputArguments);
@@ -243,7 +257,11 @@ void OPCUAserver::InitializeServer()
             (void *) server, // Pass our server pointer as a handle to the method
             1, &inputArguments, 1, &outputArguments, NULL);
 
-
+    
+    
+    /*
+     *simulationStatus boolean node
+     */
     UA_DataSource DataSource;
     DataSource = (UA_DataSource){.handle = NULL, .read = Client_readSimulationStatus_callback, .write = NULL};
     string nodeName = "simulationStatus";
@@ -266,8 +284,151 @@ void OPCUAserver::InitializeServer()
             v_attr, //6
             DataSource, //7
             NULL); //8
+    
+ 
 
+    
+   
+    ///proc/stat
+    /*
+     * ID: 13001 + processornumber
+     * 
+     * [0] user
+     * [1] system
+     * [2] idle
+     * [3] wait
+     */
+    int processorNumber=0;
+    while(processorNumber!=mysystem->CPU_count)
+    {
+    
+        UA_DataSource dt;
+        unsigned int handle_processorNumber = processorNumber;
+        dt = (UA_DataSource){.handle=NULL, .read=Client_readpfs_stat_callback,.write=NULL};
+      
+        unsigned int *h = new unsigned int;
+        *h = handle_processorNumber;
+        dt.handle = (void*)h;
+        string nodeName_pfs_stat = "pfs_stat_cpu" + to_string(processorNumber);
+        string description_pfs_stat = nodeName_pfs_stat;
+        UA_VariableAttributes v_attr1;
+        UA_VariableAttributes_init(&v_attr1);
+        v_attr1.description = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName_pfs_stat.c_str());
+        v_attr1.displayName = UA_LOCALIZEDTEXT_ALLOC("en_US", description_pfs_stat.c_str());
+        //UA_UInt64 pfs_stat_node[4];
+        v_attr1.accessLevel = UA_ACCESSLEVELMASK_READ;
+        char str1[]="pfs_stat";
+        const UA_QualifiedName q1 = UA_QUALIFIEDNAME(1, str1);
+        uint16_t nodeid= 13001;
+        nodeid=nodeid+processorNumber;
+        UA_Server_addDataSourceVariableNode(server,
+                UA_NODEID_NUMERIC(1, nodeid), //1
+                UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), //2
+                UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES), //3
+                q1, //4
+                UA_NODEID_NULL, //5
+                v_attr1, //6
+                dt, //7
+                NULL); //8
 
+        
+        
+        processorNumber++;
+    }
+    
+    
+    //proc/meminfo
+    /*
+     * ID: 13015
+     * 
+     * [0] total memory
+     * [1] free memory
+     * [2] available memory
+     */
+    UA_DataSource dt1;
+    dt1 = (UA_DataSource){.handle=NULL,.read=Client_readpfs_meminfo_callback,.write=NULL};
+    string nodeName_pfs_meminfo = "pfs_meminfo";
+    string description_pfs_meminfo = nodeName_pfs_meminfo;
+    UA_VariableAttributes v_attr1;
+    UA_VariableAttributes_init(&v_attr1);
+    v_attr1.description = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName_pfs_meminfo.c_str());
+    v_attr1.displayName = UA_LOCALIZEDTEXT_ALLOC("en_US", description_pfs_meminfo.c_str());
+    char str1[]="pfs_meminfo";
+    v_attr1.accessLevel = UA_ACCESSLEVELMASK_READ;
+    const UA_QualifiedName q1 = UA_QUALIFIEDNAME(1, str1);
+    uint16_t nodeid1= 13015;
+    UA_Server_addDataSourceVariableNode(server,
+                UA_NODEID_NUMERIC(1, nodeid1), //1
+                UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), //2
+                UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES), //3
+                q1, //4
+                UA_NODEID_NULL, //5
+                v_attr1, //6
+                dt1, //7
+                NULL); //8
+   
+        
+    //proc/pid/stat
+    /*
+     * ID: 13016
+     * 
+     * [0] utime
+     * [1] stime
+     */
+    UA_DataSource dt2;
+    dt2 = (UA_DataSource){.handle=NULL,.read=Client_readpfs_pid_stat_callback,.write=NULL};
+    string nodeName_pfs_pid_stat = "pfs_pid_stat";
+    string description_pfs_pid_stat = nodeName_pfs_pid_stat;
+    UA_VariableAttributes v_attr2;
+    UA_VariableAttributes_init(&v_attr2);
+    v_attr2.description = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName_pfs_pid_stat.c_str());
+    v_attr2.displayName = UA_LOCALIZEDTEXT_ALLOC("en_US", description_pfs_pid_stat.c_str());
+    char str2[]="pfs_pid_stat";
+    v_attr2.accessLevel = UA_ACCESSLEVELMASK_READ;
+    const UA_QualifiedName q2 = UA_QUALIFIEDNAME(1, str2);
+    uint16_t nodeid2= 13016;
+    UA_Server_addDataSourceVariableNode(server,
+                UA_NODEID_NUMERIC(1, nodeid2), //1
+                UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), //2
+                UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES), //3
+                q2, //4
+                UA_NODEID_NULL, //5
+                v_attr2, //6
+                dt2, //7
+                NULL); //8
+    
+    
+     //proc/cpuinfo
+    /*
+     * ID:13017
+     * 
+     * [0] number of cores  
+     * [1] clock divider
+     * [2] temperature
+     */
+    UA_DataSource dt3;
+    dt3 = (UA_DataSource){.handle=NULL,.read=Client_readpfs_cpuInfo_callback,.write=NULL};
+    string nodeName_pfs_cpuinfo = "pfs_cpuinfo";
+    string description_pfs_cpuinfo = nodeName_pfs_cpuinfo;
+    UA_VariableAttributes v_attr3;
+    UA_VariableAttributes_init(&v_attr3);
+    v_attr3.description = UA_LOCALIZEDTEXT_ALLOC("en_US", nodeName_pfs_cpuinfo.c_str());
+    v_attr3.displayName = UA_LOCALIZEDTEXT_ALLOC("en_US", description_pfs_cpuinfo.c_str());
+    char str3[]="pfs_cpuinfo";
+    v_attr3.accessLevel = UA_ACCESSLEVELMASK_READ;
+    const UA_QualifiedName q3 = UA_QUALIFIEDNAME(1, str3);
+    uint16_t nodeid3= 13017;
+    UA_Server_addDataSourceVariableNode(server,
+                UA_NODEID_NUMERIC(1, nodeid3), //1
+                UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER), //2
+                UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES), //3
+                q3, //4
+                UA_NODEID_NULL, //5
+                v_attr3, //6
+                dt3, //7
+                NULL); //8
+    
+    
 }
 
 UA_ByteString OPCUAserver::loadCertificate(void)
@@ -325,9 +486,13 @@ void OPCUAserver::SetupNode(std::string nodeName, unsigned int fmuNumber, unsign
 
 }
 
+
+
 void OPCUAserver::runServer()
-{
+{  
+   
     UA_StatusCode retval = UA_Server_run(server, &run_server);
+    
 }
 
 void OPCUAserver::startServer()
@@ -384,3 +549,147 @@ OPCUAserver::~OPCUAserver()
     // TODO Auto-generated destructor stub
 }
 
+
+
+
+
+/*****************************************************
+ 
+ 
+ 
+ 
+ Proc fs callbacks
+ 
+ 
+ 
+ ******************************************************
+ */
+
+
+    ///proc/stat
+    /*
+     * ID: 13001 + processornumber
+     * 
+     * [0] user
+     * [1] system
+     * [2] idle
+     * [3] wait
+     */
+UA_StatusCode OPCUAserver::Client_readpfs_stat_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value)
+{
+    value->hasValue = true;
+    unsigned int *cpuNum = ((unsigned int*)handle);
+    UA_UInt64 data[4];
+    uint64_t user,system,idle,wait;
+    //OngoingInstance->i=*cpuNum;
+    //OngoingInstance->mysystem->getSystem_stat(*cpuNum,OngoingInstance->temp1,OngoingInstance->temp2,OngoingInstance->temp3,OngoingInstance->temp4);
+    OngoingInstance->mysystem->getSystem_stat(*cpuNum,user,system,idle,wait);
+    data[0] = user;//OngoingInstance->temp1;
+    data[1] = system;//OngoingInstance->temp2;
+    data[2] = idle;//OngoingInstance->temp3;
+    data[3] = wait;//OngoingInstance->temp4;
+    
+    UA_Variant_setArrayCopy(&value->value,&data,4,&UA_TYPES[UA_TYPES_UINT64]);
+    value->sourceTimestamp = UA_DateTime_now();
+    value->hasSourceTimestamp = true;
+    return UA_STATUSCODE_GOOD;
+}
+    
+
+
+
+
+    //proc/pid/stat
+    /*
+     * ID: 13016
+     * 
+     * [0] utime
+     * [1] stime
+     */
+UA_StatusCode OPCUAserver::Client_readpfs_pid_stat_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value)
+{
+    value->hasValue = true;
+    uint64_t utime,stime;
+    OngoingInstance->mysystem->getsysyem_pidstat(utime,stime);
+    UA_UInt64 data[2];
+    data[0] = utime;
+    data[1] = stime;
+    UA_Variant_setArrayCopy(&value->value,&data,2,&UA_TYPES[UA_TYPES_UINT64]);
+    
+    value->sourceTimestamp = UA_DateTime_now();
+    value->hasSourceTimestamp = true;
+    return UA_STATUSCODE_GOOD;
+}
+    
+
+
+
+
+    //proc/meminfo
+    /*
+     * ID: 13015
+     * 
+     * [0] total memory
+     * [1] free memory
+     * [2] available memory
+     */
+UA_StatusCode OPCUAserver::Client_readpfs_meminfo_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value)
+{
+    value->hasValue = true;
+    uint64_t memtotal,memfree,memavail;
+    OngoingInstance->mysystem->getSystem_mem(memtotal,memfree,memavail);
+    UA_UInt64 data[3];
+    data[0]=memtotal;
+    data[1]=memfree;
+    data[2]=memavail;
+    UA_Variant_setArrayCopy(&value->value,&data,3,&UA_TYPES[UA_TYPES_UINT64]);
+    
+    value->sourceTimestamp = UA_DateTime_now();
+    value->hasSourceTimestamp = true;
+    return UA_STATUSCODE_GOOD;
+}
+    
+
+
+     //proc/cpuinfo
+    /*
+     * ID:13017
+     * 
+     * [0] number of cores  
+     * [1] clock divider
+     * [2] temperature
+     */
+UA_StatusCode OPCUAserver::Client_readpfs_cpuInfo_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value)
+{
+    value->hasValue = true;
+    UA_UInt64 data[3];
+    data[0]=OngoingInstance->mysystem->CPU_count;                       //number of cores
+    data[1]=OngoingInstance->mysystem->sc_CLK_tck;                      //clock divider
+    uint64_t temperature;
+    OngoingInstance->mysystem->getsystem_temperature(temperature);      //temperature from /sys/class/thermal/thermal_zone0/temp file
+    data[2]=temperature;
+    UA_Variant_setArrayCopy(&value->value,&data,3,&UA_TYPES[UA_TYPES_UINT64]);
+    value->sourceTimestamp = UA_DateTime_now();
+    value->hasSourceTimestamp = true;
+    return UA_STATUSCODE_GOOD;
+}

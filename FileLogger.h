@@ -17,7 +17,7 @@
 #ifndef FILELOGGER_H
 #define FILELOGGER_H
 
-//#define fullLoging
+#define fullLoging
 
 
 class FileLogger {

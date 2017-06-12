@@ -20,6 +20,8 @@
 #include <thread>
 #endif
 
+#include "SystemResources.h"
+
 struct simulation_controls {
 public:
     bool start_simulation;
@@ -50,19 +52,19 @@ private:
 
     UA_ByteString loadCertificate(void);
     void runServer();
-
-
+    
+    
+    
     //for initializing server
     UA_ServerConfig config;
     UA_ServerNetworkLayer nl;
     UA_Server *server;
     UA_Boolean run_server;
-
+    SystemResources * mysystem = new SystemResources();
+    
+    
+    
     //for methods in server space
-    //UA_Argument inputArguments2;
-    //UA_Argument outputArguments2;
-    //UA_UInt32 * pInputDimensions;
-    //UA_MethodAttributes incAttr;
     static UA_StatusCode startSimMethod_callback(
             void *methodHandle,
             const UA_NodeId objectId,
@@ -94,11 +96,41 @@ private:
             const UA_NumericRange *range,
             UA_DataValue *value);
     
+    /**************************************************
+     * proc fs data callbacks
+     **************************************************
+     */
     
+    static UA_StatusCode Client_readpfs_stat_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value);
     
-    //bool flag to end server run thread
+    static UA_StatusCode Client_readpfs_pid_stat_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value);
     
+    static UA_StatusCode Client_readpfs_meminfo_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value);
+    
+    static UA_StatusCode Client_readpfs_cpuInfo_callback(
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value);
 
+    uint64_t temp1,temp2,temp3,temp4;
+    unsigned int i;
 public:
     //public class methods and variables
     static OPCUAserver * OngoingInstance;

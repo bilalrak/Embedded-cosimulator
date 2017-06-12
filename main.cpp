@@ -12,6 +12,7 @@
  */
 
 #include <cstdlib>
+#include <unistd.h>
 #include "mainHeader.h"
 #include "fileReader.h"
 
@@ -30,7 +31,7 @@ static void stopHandler(int sign)
 int main(int argc, char** argv)
 {
 
-    cout << "Starting Embedded Simulator v2.0.0" << endl;
+    cout << "Starting Embedded Simulator v2.2.0" << endl;
     signal(SIGINT, stopHandler);
     thisServer = new OPCUAserver();
     thisServer->loadInstanceAdd(thisServer);
@@ -51,6 +52,8 @@ int main(int argc, char** argv)
 #else
     filelogger = new FileLogger(getenv("HOME"));
 #endif
+    
+    cout <<"PID from main :  <<"<<::getpid()<<endl;
     while (running)
     {
         if (thisServer->sim_controls.status_simulation == true)
@@ -71,6 +74,7 @@ int main(int argc, char** argv)
             t_runstart = high_resolution_clock::now();
            
         }
+        
     }
     //free fmu slave instances
 
@@ -98,7 +102,8 @@ void SimulationEngine()
             t3 = high_resolution_clock::now();
 #ifdef fullLoging //controlled from FileLogger.h file
             filelogger->printSim_t_exe((duration_cast<microseconds>(t3 - t1).count()));
-            avgExeTime += (duration_cast<microseconds>(t3 - t1).count());
+            
+            //avgExeTime += (duration_cast<microseconds>(t3 - t1).count());
 #else
             double temp=(duration_cast<microseconds>(t3-t1).count());
             if(WCET<temp)
@@ -111,7 +116,7 @@ void SimulationEngine()
         {
             t_runend = high_resolution_clock::now();
             avgExeTime = avgExeTime / i;
-            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i << " || avg Exe Time:" << (avgExeTime) << "us" << " || WCET:"<<WCET<< "us"<<endl;
+            cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i<<endl;
             double temp = duration_cast<milliseconds>(t_runend - t_runstart).count();
             temp /= 1000;
             filelogger->printSimOutputs(myFMUs.size(), simulation_end, temp, simulation_step,i,WCET);
