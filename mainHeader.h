@@ -51,16 +51,17 @@ std::string ExePath();
 //variables and objects
 std::vector<FMUmodel> myFMUs;
 OPCUAserver * thisServer;
-double simulation_i = 0;
-double simulation_end = 0;
-double simulation_step = 0;
+double simulation_i = 0;                //current iteration number
+double simulation_end = 0;              //total simulation duration in seconds
+double simulation_step = 0;             //simulation step size in milliseconds
+double simulation_step_in_seconds =0;   //simulation step size in seconds
 
 //for calculating total simulation run
 std::chrono::high_resolution_clock::time_point t_runstart;  
 std::chrono::high_resolution_clock::time_point t_runend;
 
 //for calculating simulation step for synchronization 
-std::chrono::high_resolution_clock::time_point t1;
+//std::chrono::high_resolution_clock::time_point t1;
 
 //for t-exe measurement 
 std::chrono::high_resolution_clock::time_point t2;  //for step initializing

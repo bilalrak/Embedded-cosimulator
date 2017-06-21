@@ -101,35 +101,44 @@ private:
      **************************************************
      */
     
-    static UA_StatusCode Client_readpfs_stat_callback(
+    static UA_StatusCode Client_read_sysResourc_CPUutilization_callback( //overall utilization
             void *handle,
             const UA_NodeId nodeId,
             UA_Boolean sourceTimeStamp,
             const UA_NumericRange *range,
             UA_DataValue *value);
     
-    static UA_StatusCode Client_readpfs_pid_stat_callback(
+    
+    static UA_StatusCode Client_read_systemResource_meminfo_callback(
             void *handle,
             const UA_NodeId nodeId,
             UA_Boolean sourceTimeStamp,
             const UA_NumericRange *range,
             UA_DataValue *value);
     
-    static UA_StatusCode Client_readpfs_meminfo_callback(
-            void *handle,
-            const UA_NodeId nodeId,
-            UA_Boolean sourceTimeStamp,
-            const UA_NumericRange *range,
-            UA_DataValue *value);
-    
-    static UA_StatusCode Client_readpfs_cpuInfo_callback(
+    static UA_StatusCode Client_read_systemResource_cpuInfo_callback(
             void *handle,
             const UA_NodeId nodeId,
             UA_Boolean sourceTimeStamp,
             const UA_NumericRange *range,
             UA_DataValue *value);
 
-    uint64_t temp1,temp2,temp3,temp4;
+    static UA_StatusCode Client_read_systemResource_APPutiliation_callback( //app utilization
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value);
+    
+
+    static UA_StatusCode Client_read_systemResource_CPUavgload_callback( //app utilization
+            void *handle,
+            const UA_NodeId nodeId,
+            UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range,
+            UA_DataValue *value);
+    
+    
     unsigned int i;
 public:
     //public class methods and variables

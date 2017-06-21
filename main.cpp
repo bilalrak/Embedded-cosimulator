@@ -65,6 +65,7 @@ int main(int argc, char** argv)
 
             thisServer->sim_controls.start_simulation = false;
             simulation_step = thisServer->sim_controls.simulation_step;
+            simulation_step_in_seconds = simulation_step / 1000;
             simulation_end = thisServer->sim_controls.simulation_time;
             simulation_i = 0;
             avgExeTime = 0;
@@ -74,6 +75,8 @@ int main(int argc, char** argv)
             t_runstart = high_resolution_clock::now();
            
         }
+        else
+            std::this_thread::sleep_for(chrono::milliseconds(10)); //reducing idle CPU utilization
         
     }
     //free fmu slave instances
@@ -86,32 +89,25 @@ void SimulationEngine()
 
     static high_resolution_clock::time_point t1 = high_resolution_clock::now(); //timestamps to calculate step start instance
     static uint32_t i = 0;
-    static double WCET=0;
+    
     t2 = high_resolution_clock::now(); //timestamps to calculate step start instance
-    if (duration_cast<milliseconds>(t2 - t1).count() >= simulation_step)
+    uint16_t delta=duration_cast<milliseconds>(t2 - t1).count(); 
+    if ( delta>= simulation_step)
     {
         
-        //cout<<"st:"<<simulation_step<<" duration:"<<duration_cast<milliseconds>(t2 - t1).count()<<endl;
+        cout<<" duration:"<<duration_cast<microseconds>(t2 - t1).count()<<endl;
         t1 = t2;
         if (simulation_i < simulation_end)
         {   
-            double step = simulation_step / 1000;
-            SimulationDoStep(simulation_i, step);
-            simulation_i += step;
+            //double step = simulation_step / 1000; //converting step in seconds
+            SimulationDoStep(simulation_i, simulation_step_in_seconds);
+            simulation_i += simulation_step_in_seconds;
             i++;
             t3 = high_resolution_clock::now();
-#ifdef fullLoging //controlled from FileLogger.h file
+            
             filelogger->printSim_t_exe((duration_cast<microseconds>(t3 - t1).count()));
-            
-            //avgExeTime += (duration_cast<microseconds>(t3 - t1).count());
-#else
-            double temp=(duration_cast<microseconds>(t3-t1).count());
-            if(WCET<temp)
-                WCET=temp;
-            
-            avgExeTime +=temp;
-                
-#endif
+
+
         } else
         {
             t_runend = high_resolution_clock::now();
@@ -119,25 +115,26 @@ void SimulationEngine()
             cout << "Runtime:" << duration_cast<milliseconds>(t_runend - t_runstart).count() << "ms" << " || SimSteps:" << i<<endl;
             double temp = duration_cast<milliseconds>(t_runend - t_runstart).count();
             temp /= 1000;
-            filelogger->printSimOutputs(myFMUs.size(), simulation_end, temp, simulation_step,i,WCET);
+            filelogger->printSimOutputs(myFMUs.size(), simulation_end, temp, simulation_step,i,0);
             thisServer->sim_controls.status_simulation = false;
             simulation_i = 0;
             avgExeTime = 0;
             simulation_step = 0;
             DeinitializeFMUs();
-
-            WCET=0;
             i = 0;
         }
         
     }
+    //if(delta>2)
+      //  std::this_thread::sleep_for(chrono::milliseconds(1));
+      
 }
 
 void SimulationDoStep(float cur_SimTim, float cur_step)
 {
     for (unsigned int x = 0; x < myFMUs.size(); x++)
     {
-        for (unsigned int y = 0; y < myFMUs[x].inVars.size(); y++)
+        for (unsigned int y = 0; y < myFMUs[x].inVars.size();    y++)
         {
             myFMUs[x].load_FMU_input(y, thisServer->FMUs_sourcebuffer[x].inputs_DataSource[y].buffer);
             thisServer->FMUs_sourcebuffer[x].inputs_DataSource[y].time = cur_SimTim;

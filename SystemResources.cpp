@@ -20,33 +20,18 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "sys/times.h"
+#include "sys/vtimes.h"
+#include <sys/resource.h>
+#include <chrono>
   //for ::getpid() and sysconf(_SC_NPROCESSORS_ONLN);
 
 using namespace std;
+using namespace chrono;
 
 SystemResources::SystemResources()
 {
     myapplicationPID = to_string(::getpid());
-    //string name_proc_stat = "/proc/stat";
-    //fs_proc_stat.open(name_proc_stat.c_str(),ios::in);
-
-    //string name_proc_pid_stat = "/proc/";
-    //name_proc_pid_stat += myapplicationPID + "/stat";
-    //fs_proc_pid_stat.open(name_proc_pid_stat.c_str(),ios::in);
-
-    //string name_proc_pid_sched = "/proc/";
-    //name_proc_pid_sched += myapplicationPID + "/sched";
-    //fs_proc_pid_sched.open(name_proc_pid_sched.c_str(), ios::in);
-
-    string name_proc_cpuinfo = "/proc/cpuinfo";
-    fs_proc_cpuinfo.open(name_proc_cpuinfo.c_str(), ios::in);
-
-    //string name_proc_meminfo = "/proc/meminfo";
-    //fs_proc_meminfo.open(name_proc_meminfo.c_str(),ios::in);
-
-
-    //number of processors
-
     CPU_count = sysconf(_SC_NPROCESSORS_ONLN);
     sc_CLK_tck = sysconf(_SC_CLK_TCK);
     cout << "number of processor(s):" << CPU_count << " | sc_clk_tck: " << sc_CLK_tck << " | procPID:"<<myapplicationPID<<endl;
@@ -54,7 +39,7 @@ SystemResources::SystemResources()
 
 
 
-bool SystemResources::getSystem_stat(unsigned int cpuNum,uint64_t & user,uint64_t & system,uint64_t &idle, uint64_t&iowait)
+void SystemResources::getSystem_stat(uint64_t & ovUtil)
 {
     
     /*
@@ -63,41 +48,75 @@ bool SystemResources::getSystem_stat(unsigned int cpuNum,uint64_t & user,uint64_
      * [2]->idle
      * [3]->iowait
      */
-    
-    bool found=false;
+    static uint64_t userLast=0,userniceLast=0,sysLast=0,idleLast=0,iowaitLast=0,irqLast=0,softirqLast=0;
+    uint64_t user,usernice,sys,idle,iowait,irq,softirq;
+    double percent=0;
     string line;
-    string str="cpu" +to_string(cpuNum);
     string name_proc_stat = "/proc/stat";
+    
     fs_proc_stat.open(name_proc_stat.c_str(),ios::in);
-    while(getline(fs_proc_stat,line))
-    {
-        if(line.find(str,0)!=-1)
-        {
-            found=true;
+    getline(fs_proc_stat,line);
+    
+        /* 
+        1    user – time spent in user mode.
+        2    nice – time spent in user mode with low priority.
+        3    system – time spent in system mode.
+        4    idle – time spent in the idle task.
+        5    iowait –  time waiting for I/O to complete.
+        6    irq – time servicing hardware interrupts.
+        7    softirq – time servicing software interrupts.
+        8    steal – time spent in other operating systems when running in a virtualized environment.
+        9    guest – time spent running a virtual CPU for guest operating systems.
+        10   guest_nice – time spent running a low priority virtual CPU for guest operating systems.
+         */
+        
+            
             std::stringstream stream(line);
             stream.ignore(15,' ');
-            stream>>user;                //user
+            stream>>user;               
+            stream>>usernice;
+            stream>>sys;                
+            stream>>idle;                
+            stream>>iowait;              
+            stream>>irq;
+            stream>>softirq;
             
-            stream.ignore(15,' ');
-            stream.ignore(15,' ');
-            stream>>system;                //system
+            if(user<userLast || usernice<userniceLast ||sys<sysLast || idle<idleLast || iowait<iowaitLast || irq < irqLast || softirq<softirqLast )
+            {
+                 //overflow detected..skip this reading
+                ovUtil=6000;
+                return;
+            }
+           
+            double total;
+            total = (user-userLast)+(usernice-userniceLast)+(sys-sysLast)+(irq-irqLast)+(softirq-softirqLast);
+            percent = total;
+            total +=((idle-idleLast)+(iowait-iowaitLast));
+            percent/=total;
             
-            //stream.ignore(15,' ');
-            stream>>idle;                //idle
+            percent*=100;
             
-            //stream.ignore(15,' ');
-            stream>>iowait;                //iowait
+            ovUtil=percent;
+            
+            userLast=user;
+            userniceLast=usernice;
+            sysLast=sys;
+            irqLast=irq;
+            softirqLast=softirq;
+            idleLast=idle;
+            iowaitLast=iowait;
+            
             
             fs_proc_stat.close();
-            return found;
-        }
+            
         
-    }
-    fs_proc_stat.close();
+        
+    
+   
     
     
     
-    return found;
+    
 }
 
 void SystemResources::getSystem_mem(uint64_t & totalMEM,uint64_t & freeMEM, uint64_t & avaiMEM)
@@ -127,44 +146,46 @@ void SystemResources::getSystem_mem(uint64_t & totalMEM,uint64_t & freeMEM, uint
     fs_proc_meminfo.close();
 }
 
-void SystemResources::getsysyem_pidstat(uint64_t & utime, uint64_t & stime)
+void SystemResources::getsystem_loadavg(double & one_min, double & five_min, double & fifteen_min)
 {
-    /*
-     * [0]->utime
-     * [1]->stime
-     */
-    string name_proc_pid_stat = "/proc/";
-    name_proc_pid_stat += myapplicationPID + "/stat";
-    fs_proc_pid_stat.open(name_proc_pid_stat.c_str(),ios::in);
-    int i=0;
+    string name_proc_loadavg = "/proc/loadavg";
+    fs_proc_loadavg.open(name_proc_loadavg.c_str(),ios::in);
     string line;
-    getline(fs_proc_pid_stat,line);
+    getline(fs_proc_loadavg,line);
     std::stringstream stream(line);
-    while(i!=13)
-    {
-        stream.ignore(15,' ');
-        i++;
-    }
+    stream>>one_min;
+    stream>>five_min;
+    stream>>fifteen_min;
+    fs_proc_loadavg.close();
+}
+
+void SystemResources::getsystem_procUtilization(uint64_t & U)
+{
+
+    static clock_t lastCPU=0,lastCPUuser=0, lastCPUsys=0;
+    static chrono::high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+   
+    struct tms timeSample;
+    double percent;
+    clock_t now;
     
-    stream>>utime;
+    now = times(&timeSample);
+   
     
     
-    stream>>stime;
-    fs_proc_pid_stat.close();
+    percent = (timeSample.tms_stime+timeSample.tms_cstime-lastCPUsys)+(timeSample.tms_utime+timeSample.tms_cutime-lastCPUuser);
+    percent /= (now-lastCPU);
+    //percent /= CPU_count;
+    percent *= 100;
+    lastCPUuser = timeSample.tms_utime+timeSample.tms_cutime;
+    lastCPUsys = timeSample.tms_stime+timeSample.tms_cstime;
+    lastCPU=now;
+    U = percent;
     
 }
 
-void SystemResources::getsysyem_pidsched(uint64_t & waitsum)
-{
-    string name_proc_pid_sched = "/proc/";
-    name_proc_pid_sched += myapplicationPID + "/sched";
-    fs_proc_pid_sched.open(name_proc_pid_sched.c_str(), ios::in);
-    
-    
-    
-    
-    fs_proc_pid_sched.close();
-}
+
 
 void SystemResources::getsystem_temperature(uint64_t & temp)
 {
@@ -194,10 +215,8 @@ SystemResources::SystemResources(const SystemResources& orig)
 
 SystemResources::~SystemResources()
 {
-    fs_proc_cpuinfo.close();
+
     fs_proc_meminfo.close();
-    fs_proc_pid_sched.close();
-    fs_proc_pid_stat.close();
     fs_proc_stat.close();
 }
 
