@@ -134,12 +134,12 @@ void SimulationDoStep(float cur_SimTim, float cur_step)
 {
     for (unsigned int x = 0; x < myFMUs.size(); x++)
     {
-        for (unsigned int y = 0; y < myFMUs[x].inVars.size();    y++)
+        for (unsigned int y = 0; y < myFMUs[x].get_Invar_size();    y++)
         {
             myFMUs[x].load_FMU_input(y, thisServer->FMUs_sourcebuffer[x].inputs_DataSource[y].buffer);
             thisServer->FMUs_sourcebuffer[x].inputs_DataSource[y].time = cur_SimTim;
         }
-        for (unsigned int y = 0; y < myFMUs[x].outVars.size(); y++)
+        for (unsigned int y = 0; y < myFMUs[x].get_Outvar_size(); y++)
         {
             thisServer->FMUs_sourcebuffer[x].outputs_DataSource[y].buffer = myFMUs[x].get_fmu_output(y);
             thisServer->FMUs_sourcebuffer[x].outputs_DataSource[y].time = cur_SimTim;
@@ -191,30 +191,30 @@ void testFunction_makeFMUlist(unsigned int howMuchTOLoad)
         fmu.loadFMU_xml(p_xml.c_str());
         fmu.loadFMU_so(p_so.c_str());
 #endif
-        thisServer->initialize_FMUbuffer(fmu.inVars.size(), fmu.outVars.size());
+        thisServer->initialize_FMUbuffer(fmu.get_Invar_size(), fmu.get_Outvar_size());
 
-        for (unsigned int x = 0; x < fmu.inVars.size(); x++)
+        for (unsigned int x = 0; x < fmu.get_Invar_size(); x++)
         {
             string s("fmu[");
             s.append(to_string(myFMUs.size()));
             s.append("]_in[");
             s.append(to_string(x));
             s.append("]_");
-            s.append(fmu.inVars[x].name);
-            fmu.inVars[x].serverNodeName = s;
+            s.append(fmu.get_inputTerminal_name(x));
+            //fmu.inVars[x].serverNodeName = s;
             thisServer->SetupNode(s, myFMUs.size(), x, true);
             //thisServer->SetupNode(fmu.inVars[x].serverNodeName);
         }
 
-        for (unsigned int x = 0; x < fmu.outVars.size(); x++)
+        for (unsigned int x = 0; x < fmu.get_Outvar_size(); x++)
         {
             string s("fmu[");
             s.append(to_string(myFMUs.size()));
             s.append("]_out[");
             s.append(to_string(x));
             s.append("]_");
-            s.append(fmu.outVars[x].name);
-            fmu.outVars[x].serverNodeName = s;
+            s.append(fmu.get_outputTerminal_name(x));
+            //fmu.outVars[x].serverNodeName = s;
             thisServer->SetupNode(s, myFMUs.size(), x, false);
             //thisServer->SetupNode(fmu.outVars[x].serverNodeName);
         }

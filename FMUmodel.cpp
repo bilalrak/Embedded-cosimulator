@@ -244,8 +244,8 @@ bool FMUmodel::construct_InputOutput_vectors(const char * xmlpath)
     doc.load_file(xmlpath); //"/home/bilal/xmlfolder/modelDescription.xml");
 
     unsigned int vr;
-    outputVar outvar;
-    inputvar invar;
+    IOterminal outvar;
+    IOterminal invar;
     pugi::xml_node start = doc.child("fmiModelDescription").child(
             "ModelVariables");
 
@@ -438,3 +438,25 @@ bool FMUmodel::loadFMU_xml(const char *xmlPath)
     return success;
 }
 
+
+
+    unsigned int FMUmodel::get_Invar_size()
+    {
+        return inVars.size();
+    }
+    
+    unsigned int FMUmodel::get_Outvar_size()
+    {
+        return outVars.size();
+    }
+    
+    
+    
+    std::string FMUmodel::get_inputTerminal_name(unsigned int terminalNumber)
+    {
+        return inVars[terminalNumber].name;
+    }
+    std::string FMUmodel::get_outputTerminal_name(unsigned int terminalNumber)
+    {
+        return outVars[terminalNumber].name;
+    }

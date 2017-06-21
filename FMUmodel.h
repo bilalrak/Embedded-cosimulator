@@ -14,23 +14,23 @@
 #include <string>
 
 
-struct inputvar
+struct IOterminal
 {
 public:
     std::string name;
 
     unsigned int valueReference;
     //fmiReal valBuffer;
-    std::string serverNodeName;
+    //std::string serverNodeName;
 };
-struct outputVar
+/*struct IOterminal
 {
 public:
     std::string name;
     unsigned int valueReference;
     //fmiReal valBuffer;
-    std::string serverNodeName;
-};
+    //std::string serverNodeName;
+};*/
 
 
 typedef void*  HANDLE;
@@ -45,8 +45,7 @@ class FMUmodel
 public:
 	FMUmodel();
 	virtual ~FMUmodel();
-    std::vector<inputvar> inVars;
-    std::vector<outputVar> outVars;
+    
 
     fmiComponent c;
     fmiCallbackFunctions callbacks;
@@ -81,7 +80,7 @@ public:
     fGetStringStatus getStringStatus;
     //<functions/>
 
-    bool construct_InputOutput_vectors(const char * xmlpath);
+    
     void init_FMU_inputs();
     void load_FMU_input(int inputNumber, fmiReal value);
     fmiReal get_fmu_output(int outputNumber);
@@ -92,6 +91,11 @@ public:
     bool loadFMU_so(const char * soPath);
     bool load_FMU_Component(float h,float tend);
     void unload_FMU_Component();
+    unsigned int get_Invar_size();
+    unsigned int get_Outvar_size();
+    
+    std::string get_inputTerminal_name(unsigned int terminalNumber);
+    std::string get_outputTerminal_name(unsigned int terminalNumber);
 
 
 private:
@@ -100,7 +104,10 @@ private:
     HANDLE soHandle;
     static void fmuLogger(fmiComponent c, fmiString instanceName, fmiStatus status,
                fmiString category, fmiString message, ...);
+    bool construct_InputOutput_vectors(const char * xmlpath);
 
+    std::vector<IOterminal> inVars;
+    std::vector<IOterminal> outVars;
 
 
 };
