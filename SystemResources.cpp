@@ -133,9 +133,10 @@ void SystemResources::getSystem_mem(uint64_t & totalMEM,uint64_t & freeMEM, uint
     std::vector<uint64_t> memstats;
     while(getline(fs_proc_meminfo,line)&&line.find(str,0)==-1)
     {
+        string waste;
         std::stringstream stream(line);
         uint64_t val;
-        stream.ignore(15,' ');
+        stream >> waste;
         stream >>val;
         memstats.push_back(val);
         //cout<<line<<": "<<val<<endl;

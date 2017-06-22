@@ -26,7 +26,7 @@ public:
     FileLogger(const FileLogger& orig);
     virtual ~FileLogger();
     void printSimOutputs(unsigned int N_FMUs, double runTime,double simulatedRunTime,double stepSize,uint32_t iterations,double WCET);
-    void printSim_t_exe(double t_exe);
+    void printSim_t_exe(double t_exe,double delta);
 
 private:
     std::fstream file;

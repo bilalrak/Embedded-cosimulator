@@ -31,7 +31,7 @@ static void stopHandler(int sign)
 int main(int argc, char** argv)
 {
 
-    cout << "Starting Embedded Simulator v2.2.0" << endl;
+    cout << "Starting Embedded Simulator v2.2.5" << endl;
     signal(SIGINT, stopHandler);
     thisServer = new OPCUAserver();
     thisServer->loadInstanceAdd(thisServer);
@@ -91,11 +91,11 @@ void SimulationEngine()
     static uint32_t i = 0;
     
     t2 = high_resolution_clock::now(); //timestamps to calculate step start instance
-    uint16_t delta=duration_cast<milliseconds>(t2 - t1).count(); 
+    uint32_t delta=duration_cast<microseconds>(t2 - t1).count(); 
     if ( delta>= simulation_step)
     {
         
-        cout<<" duration:"<<duration_cast<microseconds>(t2 - t1).count()<<endl;
+        //cout<<" duration:"<<duration_cast<microseconds>(t2 - t1).count()<<endl;
         t1 = t2;
         if (simulation_i < simulation_end)
         {   
@@ -105,7 +105,7 @@ void SimulationEngine()
             i++;
             t3 = high_resolution_clock::now();
             
-            filelogger->printSim_t_exe((duration_cast<microseconds>(t3 - t1).count()));
+            filelogger->printSim_t_exe((duration_cast<microseconds>(t3 - t1).count()),delta);
 
 
         } else

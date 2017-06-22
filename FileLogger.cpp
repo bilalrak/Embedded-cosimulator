@@ -31,7 +31,7 @@ FileLogger::FileLogger(string path)
     /*fullLoging logs the texe in every iteration of simulation
      * else only the Worst Case Execution time is logged 
      */
-    file<<"t-exe (us),# FMUs,Runtime (s),simulated Runtime (s),StepSize (ms),iterations"<<endl;
+    file<<"t-exe (us),delta (us),# FMUs,Runtime (s),simulated Runtime (s),StepSize (ms),iterations"<<endl;
 #else
     file<<"WCET (us),# FMUs,Runtime (s),simulated Runtime (s),StepSize (ms),iterations"<<endl;
 #endif
@@ -46,15 +46,15 @@ FileLogger::FileLogger(const FileLogger& orig)
 void FileLogger::printSimOutputs(unsigned int N_FMUs, double runTime,double simulatedRunTime,double stepSize,uint32_t iterations,double WCET)
 {
 #ifdef fullLoging
-    file<<"--"<<","<<N_FMUs<<","<<runTime<<","<<simulatedRunTime<<","<<stepSize<<","<<iterations<<endl;
+    file<<"--"<<","<<"--"<<","<<N_FMUs<<","<<runTime<<","<<simulatedRunTime<<","<<stepSize<<","<<iterations<<endl;
 #else
     file<<WCET<<","<<N_FMUs<<","<<runTime<<","<<simulatedRunTime<<","<<stepSize<<","<<iterations<<endl;
 #endif
     file<<"\n\n\n\n\n"<<endl;
 }
-void FileLogger::printSim_t_exe(double t_exe)
+void FileLogger::printSim_t_exe(double t_exe,double delta)
 {
-    file<<t_exe<<endl;
+    file<<t_exe<<","<<delta<<endl;
 }
 
 
